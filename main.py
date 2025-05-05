@@ -67,7 +67,7 @@ class DecisionTree(Scene):
 
         return VGroup(tree, text)
 
-    def addtreenodes(self, root) -> VGroup:
+    def addtreenodes(self, root) -> tuple[VGroup, AnimationGroup]:
         cfs = fs - 12
 
         # Internal Node 1 - Left
@@ -90,10 +90,9 @@ class DecisionTree(Scene):
         tree = VGroup(leftnode, rightnode, branch1, branch2)
         text = VGroup(leftnode_text, rightnode_text)
 
-        self.play(Create(tree), FadeIn(text))
-        self.wait(2)
+        animations = AnimationGroup(Create(tree), FadeIn(text))
 
-        return VGroup(tree, text)
+        return VGroup(tree, text), animations
 
     def display_example(self) -> Text:
         text = Text("Lets see an example", font_size=fs)
@@ -121,8 +120,9 @@ class DecisionTree(Scene):
         self.play(treebase.animate.shift(UP * 2))
 
         # Add nodes to tree
-        leftnode = self.addtreenodes(treebase[0][1])
-        rightnode = self.addtreenodes(treebase[0][2])
+        leftnode, anim_left_n = self.addtreenodes(treebase[0][1])
+        rightnode, anim_right_n = self.addtreenodes(treebase[0][2])
+        self.play(anim_left_n, anim_right_n)
 
         # Delay before removing text
         self.wait(2)
