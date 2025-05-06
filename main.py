@@ -226,35 +226,44 @@ class DecisionTree(Scene):
         cfs = fs - 12
         text = Text(text, font_size=cfs, font=fn)
 
-        self.play(Write(text))
-
         return text
+
+    def outro(self) -> VGroup:
+        rr = RoundedRectangle(height=1, width=5)
+        text = Text("Thanks for watching", font_size=fs)
+        text.move_to(rr.get_center())
+
+        self.play(Create(rr))
+        self.play(Write(text))
+        self.wait(2)
+
+        return VGroup(rr, text)
 
     def construct(self):
         # Introduction
-        # intro = self.intro()
-        # explaination = self.explanation()
-        # treebase = self.maketreebase()
-        #
-        # # Remove unnecessary elements
-        # self.play(FadeOut(VGroup(intro, explaination)))
-        # self.play(treebase.animate.shift(UP * 2))
-        #
-        # # Add nodes to tree
-        # leftnode, anim_left_n = self.addtreenodes(treebase[0][1])
-        # rightnode, anim_right_n = self.addtreenodes(treebase[0][2])
-        # self.play(anim_left_n, anim_right_n)
-        #
-        # # Delay before removing text
-        # self.wait(2)
-        #
-        # # Remove bloat
-        # self.play(FadeOut(treebase), FadeOut(leftnode), FadeOut(rightnode))
-        #
-        # # Display example screen
-        # example = self.display_example()
-        # self.wait(2)
-        # self.play(FadeOut(example))
+        intro = self.intro()
+        explaination = self.explanation()
+        treebase = self.maketreebase()
+
+        # Remove unnecessary elements
+        self.play(FadeOut(VGroup(intro, explaination)))
+        self.play(treebase.animate.shift(UP * 2))
+
+        # Add nodes to tree
+        leftnode, anim_left_n = self.addtreenodes(treebase[0][1])
+        rightnode, anim_right_n = self.addtreenodes(treebase[0][2])
+        self.play(anim_left_n, anim_right_n)
+
+        # Delay before removing text
+        self.wait(2)
+
+        # Remove bloat
+        self.play(FadeOut(treebase), FadeOut(leftnode), FadeOut(rightnode))
+
+        # Display example screen
+        example = self.display_example()
+        self.wait(2)
+        self.play(FadeOut(example))
 
         # Display actual exmaple (hotel)
         hotel = self.display_hotel()
@@ -266,6 +275,7 @@ class DecisionTree(Scene):
 
         right_node = self.add_right_node(hotel_tree[2], "Don't Book")
         oob = self.display_text("If hotel is out of budget, don't book.")
+        self.play(Write(oob))
 
         self.wait(2)
         self.play(FadeOut(oob))
@@ -292,6 +302,7 @@ class DecisionTree(Scene):
         bad_review = self.display_text(
             "If hotel has bad review (less than 4★), don't book."
         )
+        self.play(Write(bad_review))
 
         # Wait 2 seconds
         self.wait(2)
@@ -336,16 +347,79 @@ class DecisionTree(Scene):
             FadeOut(book1),
         )
 
-        book1_explain = self.display_text(
-            "If price is in budget, has good reviews, and location is convenient, Book it"
-        )
+        book1_explain1 = self.display_text("If it's in budget and has good reviews:")
+        book1_explain2 = self.display_text("If location is convenient, Book it")
+
+        book1_explain2.next_to(book1_explain1, DOWN, buff=0.3)
+        self.play(Write(book1_explain1))
+        self.play(Write(book1_explain2))
+
         self.wait(2)
-        self.play(FadeOut(book1_explain))
+        self.play(FadeOut(book1_explain1), FadeOut(book1_explain2))
 
         self.play(FadeIn(sub_left_node_copy), FadeIn(book1_copy))
 
-        sub_right_node = self.add_right_node(
+        sub_right_node = self.add_left_node(
             sub_left_node_copy[2], "Is it close to public transport?"
         )
 
-        self.wait(5)
+        book2 = self.book_it(sub_right_node[1])
+        self.wait(1)
+
+        sub_left_node = sub_left_node_copy.copy()
+        book1 = book1_copy.copy()
+        sub_right_node_copy = sub_right_node.copy()
+        book2_copy = book2.copy()
+
+        self.play(
+            FadeOut(sub_left_node_copy),
+            FadeOut(book1_copy),
+            FadeOut(sub_right_node),
+            FadeOut(book2),
+        )
+
+        book2_explain1 = self.display_text("If it's in budget and has good reviews:")
+        book2_explain2 = self.display_text(
+            "If not convenient, but close to transport, Book it"
+        )
+
+        book2_explain2.next_to(book2_explain1, DOWN, buff=0.3)
+        self.play(Write(book2_explain1))
+        self.play(Write(book2_explain2))
+
+        self.wait(2)
+
+        self.play(FadeOut(book2_explain1), FadeOut(book2_explain2))
+
+        self.play(
+            FadeIn(sub_left_node),
+            FadeIn(book1),
+            FadeIn(sub_right_node_copy),
+            FadeIn(book2_copy),
+        )
+
+        right_node = self.add_right_node(sub_right_node[2], "Don't Book")
+        self.wait(1)
+
+        sub_left_node_copy = sub_left_node.copy()
+        book1_copy = book1.copy()
+        sub_right_node = sub_right_node_copy.copy()
+        book2 = book2_copy.copy()
+
+        self.play(
+            FadeOut(sub_left_node),
+            FadeOut(book1),
+            FadeOut(sub_right_node_copy),
+            FadeOut(book2_copy),
+            FadeOut(right_node),
+        )
+
+        book2_explain = self.display_text("Otherwise, Don't book it")
+
+        self.play(Write(book2_explain))
+        self.wait(2)
+        self.play(FadeOut(book2_explain))
+
+        self.wait(1)
+        self.outro()
+        self.wait(4)
