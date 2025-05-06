@@ -137,11 +137,11 @@ class DecisionTree(Scene):
 
         return VGroup(root, node1, node2, branch1, branch2)
 
-    def add_right_node(self, root) -> VGroup:
+    def add_right_node(self, root, text) -> VGroup:
         cfs = fs - 16
 
         # Internal Node 2 - Right
-        rightnode = Text("Don't Book", font_size=cfs, font=fn)
+        rightnode = Text(text, font_size=cfs, font=fn)
         rightnode.move_to(root.get_center() + DOWN * 0.8)
 
         # Create branches (lines)
@@ -154,15 +154,16 @@ class DecisionTree(Scene):
         # Group shapes and text
         tree = VGroup(rightnode, branch)
 
-        self.play(FadeIn(tree))
+        self.play(FadeIn(rightnode))
+        self.play(Create(branch))
 
         return tree
 
-    def add_left_node(self, root) -> VGroup:
+    def add_left_node(self, root, text) -> VGroup:
         cfs = fs - 16
 
         # Main question node
-        leftroot = Text("Does it have good reviews (4★+)?", font_size=cfs)
+        leftroot = Text(text, font_size=cfs)
         leftroot.move_to(root.get_center() + DOWN * 0.8)
 
         # Child options with smaller horizontal spacing
@@ -199,9 +200,31 @@ class DecisionTree(Scene):
 
         return tree
 
-    def out_of_budget(self) -> Text:
+    def book_it(self, root) -> VGroup:
+        cfs = fs - 16
+
+        # Internal Node 2 - Right
+        rightnode = Text("Book it", font_size=cfs, font=fn)
+        rightnode.move_to(root.get_center() + DOWN * 0.8)
+
+        # Create branches (lines)
+        branch = Line(
+            root.get_bottom() + DOWN * 0.1,
+            rightnode.get_top() + UP * 0.1,
+            stroke_width=1,
+        )
+
+        # Group shapes and text
+        tree = VGroup(rightnode, branch)
+
+        self.play(FadeIn(rightnode))
+        self.play(Create(branch))
+
+        return tree
+
+    def display_text(self, text) -> Text:
         cfs = fs - 12
-        text = Text("If hotel is out of budget, don't book.", font_size=cfs, font=fn)
+        text = Text(text, font_size=cfs, font=fn)
 
         self.play(Write(text))
 
@@ -209,45 +232,120 @@ class DecisionTree(Scene):
 
     def construct(self):
         # Introduction
-        intro = self.intro()
-        explaination = self.explanation()
-        treebase = self.maketreebase()
-
-        # Remove unnecessary elements
-        self.play(FadeOut(VGroup(intro, explaination)))
-        self.play(treebase.animate.shift(UP * 2))
-
-        # Add nodes to tree
-        leftnode, anim_left_n = self.addtreenodes(treebase[0][1])
-        rightnode, anim_right_n = self.addtreenodes(treebase[0][2])
-        self.play(anim_left_n, anim_right_n)
-
-        # Delay before removing text
-        self.wait(2)
-
-        # Remove bloat
-        self.play(FadeOut(treebase), FadeOut(leftnode), FadeOut(rightnode))
-
-        # Display example screen
-        example = self.display_example()
-        self.wait(2)
-        self.play(FadeOut(example))
+        # intro = self.intro()
+        # explaination = self.explanation()
+        # treebase = self.maketreebase()
+        #
+        # # Remove unnecessary elements
+        # self.play(FadeOut(VGroup(intro, explaination)))
+        # self.play(treebase.animate.shift(UP * 2))
+        #
+        # # Add nodes to tree
+        # leftnode, anim_left_n = self.addtreenodes(treebase[0][1])
+        # rightnode, anim_right_n = self.addtreenodes(treebase[0][2])
+        # self.play(anim_left_n, anim_right_n)
+        #
+        # # Delay before removing text
+        # self.wait(2)
+        #
+        # # Remove bloat
+        # self.play(FadeOut(treebase), FadeOut(leftnode), FadeOut(rightnode))
+        #
+        # # Display example screen
+        # example = self.display_example()
+        # self.wait(2)
+        # self.play(FadeOut(example))
 
         # Display actual exmaple (hotel)
         hotel = self.display_hotel()
-
         self.wait(2)
         self.play(hotel.animate.shift(UP * 3))
 
         hotel_tree = self.make_hotel_base()
         self.play(hotel_tree.animate.shift(UP * 2.5))
 
-        right_node = self.add_right_node(hotel_tree[2])
-        oob = self.out_of_budget()
+        right_node = self.add_right_node(hotel_tree[2], "Don't Book")
+        oob = self.display_text("If hotel is out of budget, don't book.")
 
         self.wait(2)
         self.play(FadeOut(oob))
 
-        left_node = self.add_left_node(hotel_tree[1])
+        left_node = self.add_left_node(
+            hotel_tree[1], "Does it have good reviews (4★+)?"
+        )
+        lright_node = self.add_right_node(left_node[2], "Don't Book")
+
+        # Store copies of nodes before fading everything out
+        left_node_copy = left_node.copy()
+        lright_node_copy = lright_node.copy()
+
+        # Fade out everything
+        self.play(
+            FadeOut(hotel),
+            FadeOut(hotel_tree),
+            FadeOut(right_node),
+            FadeOut(left_node),
+            FadeOut(lright_node),
+        )
+
+        # Display the bad review text
+        bad_review = self.display_text(
+            "If hotel has bad review (less than 4★), don't book."
+        )
+
+        # Wait 2 seconds
+        self.wait(2)
+
+        # Fade out bad review
+        self.play(FadeOut(bad_review))
+
+        # Calculate original relative position of lright_node to left_node
+        original_offset = lright_node[0].get_center() - left_node[2].get_center()
+
+        # Redisplay the left_node subtree in middle-top location
+        left_node_copy.move_to(UP * 2)  # Move to middle-top
+
+        # Position lright_node_copy relative to the new position of left_node[2] in left_node_copy
+        node2_new_pos = left_node_copy[2].get_center()
+        lright_node_copy.shift(
+            node2_new_pos + original_offset - lright_node_copy[0].get_center()
+        )
+
+        self.play(FadeIn(left_node_copy), FadeIn(lright_node_copy))
+
+        sub_left_node = self.add_left_node(
+            left_node_copy[1], "Is the location convenient?"
+        )
+        book1 = self.book_it(sub_left_node[1])
+
+        self.wait(1)
+
+        sub_left_node_copy = sub_left_node.copy()
+        book1_copy = book1.copy()
+
+        original_offset = book1[0].get_center() - sub_left_node[1].get_center()
+        sub_left_node_copy.move_to(UP * 2)
+
+        node2_new_pos = sub_left_node_copy[1].get_center()
+        book1_copy.shift(node2_new_pos + original_offset - book1_copy[0].get_center())
+
+        self.play(
+            FadeOut(left_node_copy),
+            FadeOut(lright_node_copy),
+            FadeOut(sub_left_node),
+            FadeOut(book1),
+        )
+
+        book1_explain = self.display_text(
+            "If price is in budget, has good reviews, and location is convenient, Book it"
+        )
+        self.wait(2)
+        self.play(FadeOut(book1_explain))
+
+        self.play(FadeIn(sub_left_node_copy), FadeIn(book1_copy))
+
+        sub_right_node = self.add_right_node(
+            sub_left_node_copy[2], "Is it close to public transport?"
+        )
 
         self.wait(5)
